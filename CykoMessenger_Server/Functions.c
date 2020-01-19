@@ -32,7 +32,6 @@ void refresh();
 int server_socket, client_socket;
 int channel_id=0, user_id=0;
 char token[100];
-char *messgs;
 struct sockaddr_in server, client;
 
 
@@ -48,6 +47,7 @@ typedef struct chann
 {
 	char name[100];
 	char message[100];
+	int last_message;
 	int id;
 }CHANNEL;
 CHANNEL channel;
@@ -193,15 +193,37 @@ void create_channel() {
 	else {
 		char filename[100];
 		sprintf(filename, "./Resources/Channels/%s.cyko", channel.name);
+		
 		if (access(filename, 0) != -1) {    // file exists		
 			sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Channel already exists!\"}");
 		}
 
 		else { 	// file doesn't exist
+
+				/************************* Creating JSON ***************************/
+			cJSON *add, *messages, *message;
+
+			add = cJSON_CreateObject();
+			messages = cJSON_CreateArray();
+
+			cJSON_AddItemToObject(add, "messages", messages);
+
+			char buff[100];
+			cJSON_AddItemToArray(messages, message = cJSON_CreateObject());
+			cJSON_AddItemToObject(message, "sender", cJSON_CreateString("server"));
+			sprintf(buff, "%s created channel", user.username);
+			cJSON_AddItemToObject(message, "content", cJSON_CreateString(buff));
+
+			cJSON_AddItemToObject(add, "name", cJSON_CreateString(channel.name));
+			cJSON_Delete(add);
+
+			char* addjs;
 			FILE* channelfile;
 			channelfile = fopen(filename, "w");
-			fprintf(channelfile, "{\"messages\":[{\"sender\":\"server\",\"content\":\"%s created %s.\"}],\"name\":\"%s\"\"}", user.username, channel.name,user.username);
+			addjs = cJSON_PrintUnformatted(add);
+			fprintf(channelfile, "%s", addjs);
 			fclose(channelfile);
+
 			sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
 		}
 		// Send the buffer to client
@@ -214,6 +236,7 @@ void create_channel() {
 
 void join_channel() {
 
+	channel.last_message = -1;
 	char buffer[MAX];
 	if (strcmp(token, user.token) != 0) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
 	else {
@@ -222,53 +245,33 @@ void join_channel() {
 		sprintf(filename, "./Resources/Channels/%s.cyko", channel.name);
 		if (access(filename, 0) != -1) {	// file exists
 			sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
-			channelfile = fopen(filename, "w");
 
 			/************************* Updting the messages ****************************/
-			puts("1");
+			channelfile = fopen(filename, "r");
 			char js[10000];
 			fgets(js, 10000, channelfile);
-			strcpy(messgs, js);
-			printf("%s\n%s", messgs, js);
-			cJSON *msg_array, *msg_array2, *item;
+			fclose(channelfile);
+
+			printf("%s", js);
+
+			cJSON *msg_array, *item;
 			cJSON *messages = cJSON_Parse(js);
-			cJSON *message = cJSON_Parse(messgs);
-			if (!messages||!message) {
-				printf("Error before: [%s]\n", cJSON_GetErrorPtr());
-			}
 			msg_array = cJSON_GetObjectItem(messages, "messages");
-			msg_array2 = cJSON_GetObjectItem(message, "messages");
 
 			// Create a new array item and add sender and message
 			item = cJSON_CreateObject();
 			cJSON_AddItemToObject(item, "sender", cJSON_CreateString("server"));
 			char buf[100];
-			sprintf(buf, "%s created channel %s", user.username, channel.name);
+			sprintf(buf, "%s joined channel %s", user.username, channel.name);
 			cJSON_AddItemToObject(item, "message", cJSON_CreateString(buf));
 
 			// insert the new message into the existing array
 			cJSON_AddItemToArray(msg_array, item);
+			
+			channelfile = fopen(filename, "w");
+			fprintf(channelfile, cJSON_PrintUnformatted(messages));
 
-			printf("%s\n", cJSON_Print(messages));
 			cJSON_Delete(messages);
-
-			/***************************************************************/
-			puts("1");
-			// Create a new array item and add sender and message
-			item = cJSON_CreateObject();
-			cJSON_AddItemToObject(item, "sender", cJSON_CreateString("server"));
-			sprintf(buf, "%s created channel %s", user.username, channel.name);
-			cJSON_AddItemToObject(item, "message", cJSON_CreateString(buf));
-
-			// insert the new message into the existing array
-			cJSON_AddItemToArray(msg_array2, item);
-
-			printf("%s\n", cJSON_Print(message));
-			cJSON_Delete(message);
-
-			/************************************************************************************/
-			puts("1");
-			fprintf(channelfile, js);
 
 			// Closing the file
 			fclose(channelfile);
@@ -277,7 +280,6 @@ void join_channel() {
 			sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Channel does not exist!\"}");
 		}
 	}
-	printf("%s", buffer);
 	// Send the buffer to client
 	send(client_socket, buffer, sizeof(buffer), 0);
 
@@ -291,11 +293,22 @@ void send_message() {
 	if (strcmp(token, user.token) != 0) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
 	else {
 		sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
+
+		/******************* Extracting messages from the file ********************/
+
+		FILE* channelfile;
+		char filename[100];
+		sprintf(filename, "./Resources/Channels/%s.cyko", channel.name);
+
+		channelfile = fopen(filename, "r");
+		char js[10000];
+		fgets(js, 10000, channelfile);
+		printf("%s", js);
+
+		/************************* Updting the messages ****************************/
+
 		cJSON *msg_array, *item;
-		cJSON *messages = cJSON_Parse(messgs);
-		if (!messages) {
-			printf("Error before: [%s]\n", cJSON_GetErrorPtr());
-		}
+		cJSON *messages = cJSON_Parse(js);
 		msg_array = cJSON_GetObjectItem(messages, "messages");
 
 		// Create a new array item and add sender and message
@@ -306,7 +319,8 @@ void send_message() {
 		// insert the new message into the existing array
 		cJSON_AddItemToArray(msg_array, item);
 
-		printf("%s\n", cJSON_Print(messages));
+		fprintf(channelfile, cJSON_PrintUnformatted(messages));
+
 		cJSON_Delete(messages);
 	}
 
@@ -318,15 +332,29 @@ void send_message() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void refresh() {
-	char* mssg="";
+	char* allmsg="",*mssg="";
 	char filename[100];
 	sprintf(filename, "./Resources/Channels/%s.cyko", channel.name);
-	
-	cJSON* out = cJSON_Parse(messgs);
-	mssg = cJSON_GetObjectItem(out, "messages")->valuestring;
-	sprintf(mssg, "\"type\": \"List\",\"content\":%s", mssg);
 
+	/***************** Extracting messages from the file ********************/
+
+	FILE* channelfile;
+	sprintf(filename, "./Resources/Channels/%s.cyko", channel.name);
+	channelfile = fopen(filename, "w");
+	char js[10000];
+	fgets(js, 10000, channelfile);
+	printf("%s", js);
+	
+	/***************************** Refreshing ... ****************************/
+
+	cJSON* out = cJSON_Parse(js);
+	allmsg = cJSON_GetObjectItem(out, "messages")->valuestring;
+	printf("%s", allmsg);
+	for (int i = channel.last_message + 1; allmsg[i]; i++)
+		mssg[i-(channel.last_message + 1)]=allmsg[i];
+	sprintf(allmsg, "\"type\": \"List\",\"content\":%s", allmsg);
+	channel.last_message = strlen(allmsg)-1;
+	printf("%s", mssg);
 	// Send the buffer to client
 	send(client_socket,mssg, sizeof(mssg), 0);
-	messgs = "";
 }
