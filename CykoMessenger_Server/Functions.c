@@ -23,10 +23,11 @@ char* token_generator();
 void create_channel();
 void join_channel();
 void send_message();
-//void logout();
 void refresh();
-//void channel_members();
-//void leave_channel();
+void channel_members();
+void leave_channel();
+void logout();
+
 
 
 int server_socket, client_socket;
@@ -110,12 +111,22 @@ void order_finder(char* buffer) {
 		sscanf(buffer, "%*s %[^',']%*c%s", channel.message, token);
 		send_message();
 	}
-	if (strncmp(buffer, "Refresh", 7) == 0) {
+	if (strncmp(buffer, "refresh", 7) == 0) {
 		sscanf(buffer, "%*s %s",  token);
+		refresh();
 	}
-	/*if (strncmp(buffer, "channel members", 15) == 0)return 7;
-	if (strncmp(buffer, "leave", 5) == 0)return 8;
-	if (strncmp(buffer, "logout", 6) == 0)return 9;*/
+	if (strncmp(buffer, "channel members", 15) == 0) {
+		sscanf(buffer, "%*s%*s%s", token);
+		channel_members();
+	}
+	if (strncmp(buffer, "leave", 5) == 0) {
+		sscanf(buffer, "%*s %s", token);
+		leave_channel();
+	}
+	if (strncmp(buffer, "logout", 6) == 0) {
+		sscanf(buffer, "%*s %s", token);
+		logout();
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -215,14 +226,14 @@ void create_channel() {
 			cJSON_AddItemToObject(message, "content", cJSON_CreateString(buff));
 
 			cJSON_AddItemToObject(add, "name", cJSON_CreateString(channel.name));
-			cJSON_Delete(add);
 
-			char* addjs;
 			FILE* channelfile;
 			channelfile = fopen(filename, "w");
+			char* addjs;
 			addjs = cJSON_PrintUnformatted(add);
 			fprintf(channelfile, "%s", addjs);
 			fclose(channelfile);
+			cJSON_Delete(add);
 
 			sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
 		}
@@ -236,7 +247,7 @@ void create_channel() {
 
 void join_channel() {
 
-	channel.last_message = -1;
+	channel.last_message = 0;
 	char buffer[MAX];
 	if (strcmp(token, user.token) != 0) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
 	else {
@@ -252,8 +263,6 @@ void join_channel() {
 			fgets(js, 10000, channelfile);
 			fclose(channelfile);
 
-			printf("%s", js);
-
 			cJSON *msg_array, *item;
 			cJSON *messages = cJSON_Parse(js);
 			msg_array = cJSON_GetObjectItem(messages, "messages");
@@ -263,7 +272,7 @@ void join_channel() {
 			cJSON_AddItemToObject(item, "sender", cJSON_CreateString("server"));
 			char buf[100];
 			sprintf(buf, "%s joined channel %s", user.username, channel.name);
-			cJSON_AddItemToObject(item, "message", cJSON_CreateString(buf));
+			cJSON_AddItemToObject(item, "content", cJSON_CreateString(buf));
 
 			// insert the new message into the existing array
 			cJSON_AddItemToArray(msg_array, item);
@@ -303,7 +312,7 @@ void send_message() {
 		channelfile = fopen(filename, "r");
 		char js[10000];
 		fgets(js, 10000, channelfile);
-		printf("%s", js);
+		fclose(channelfile);
 
 		/************************* Updting the messages ****************************/
 
@@ -314,13 +323,14 @@ void send_message() {
 		// Create a new array item and add sender and message
 		item = cJSON_CreateObject();
 		cJSON_AddItemToObject(item, "sender", cJSON_CreateString(user.username));
-		cJSON_AddItemToObject(item, "message", cJSON_CreateString(channel.message));
+		cJSON_AddItemToObject(item, "content", cJSON_CreateString(channel.message));
 
 		// insert the new message into the existing array
 		cJSON_AddItemToArray(msg_array, item);
 
+		channelfile = fopen(filename, "w");
 		fprintf(channelfile, cJSON_PrintUnformatted(messages));
-
+		fclose(channelfile);
 		cJSON_Delete(messages);
 	}
 
@@ -332,29 +342,83 @@ void send_message() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void refresh() {
-	char* allmsg="",*mssg="";
+	char mssg[10000]="",end[10000]="";
 	char filename[100];
-	sprintf(filename, "./Resources/Channels/%s.cyko", channel.name);
 
-	/***************** Extracting messages from the file ********************/
+	if (strcmp(token, user.token) != 0) 	sprintf(end, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	else {
 
-	FILE* channelfile;
-	sprintf(filename, "./Resources/Channels/%s.cyko", channel.name);
-	channelfile = fopen(filename, "w");
-	char js[10000];
-	fgets(js, 10000, channelfile);
-	printf("%s", js);
+		/***************** Extracting messages from the file ********************/
+		FILE* channelfile;
+		sprintf(filename, "./Resources/Channels/%s.cyko", channel.name);
+		channelfile = fopen(filename, "r");
+		char js[10000];
+		fgets(js, 10000, channelfile);
+		fclose(channelfile);
+
+		/***************************** Refreshing ... ****************************/
+		cJSON* out = cJSON_Parse(js);
+		cJSON *cont = cJSON_GetObjectItem(out, "messages");
+		char *allmsg = cJSON_PrintUnformatted(cont);
+		for (int i = channel.last_message + 1; allmsg[i+1]; i++)
+			mssg[i - (channel.last_message + 1)] = allmsg[i];
+		sprintf(end, "{\"type\": \"List\",\"content\":[%s]}", mssg);
+		channel.last_message = strlen(allmsg) - 1;
+	}
 	
-	/***************************** Refreshing ... ****************************/
-
-	cJSON* out = cJSON_Parse(js);
-	allmsg = cJSON_GetObjectItem(out, "messages")->valuestring;
-	printf("%s", allmsg);
-	for (int i = channel.last_message + 1; allmsg[i]; i++)
-		mssg[i-(channel.last_message + 1)]=allmsg[i];
-	sprintf(allmsg, "\"type\": \"List\",\"content\":%s", allmsg);
-	channel.last_message = strlen(allmsg)-1;
-	printf("%s", mssg);
 	// Send the buffer to client
-	send(client_socket,mssg, sizeof(mssg), 0);
+	send(client_socket,end, sizeof(end), 0);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void channel_members() {
+
+	char buffer[MAX];
+	if (strcmp(token, user.token) != 0) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	else {
+		
+		cJSON *add, *content;
+
+		add = cJSON_CreateObject();
+		content = cJSON_CreateArray();
+
+		cJSON_AddItemToObject(add, "type", cJSON_CreateString("list"));
+		cJSON_AddItemToObject(add, "content", content);
+		cJSON_AddItemToArray(content, cJSON_CreateString(user.username));
+		strcpy(buffer,cJSON_PrintUnformatted(add));
+		printf("%s", buffer);
+		cJSON_Delete(add);
+	}
+	// Send the buffer to client
+	send(client_socket, buffer, sizeof(buffer), 0);
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void leave_channel() {
+
+	char buffer[MAX];
+	if (strcmp(token, user.token) != 0) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	else {
+		sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
+	}
+	// Send the buffer to client
+	send(client_socket, buffer, sizeof(buffer), 0);
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void logout() {
+
+	char buffer[MAX];
+	if (strcmp(token, user.token) != 0) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	else {
+		sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
+	}
+	// Send the buffer to client
+	send(client_socket, buffer, sizeof(buffer), 0);
+
 }
