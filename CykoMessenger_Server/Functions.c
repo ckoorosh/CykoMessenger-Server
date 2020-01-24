@@ -20,7 +20,9 @@ void order_finder(char* buffer);
 void create_account();
 void signin();
 char* token_generator();
+int id_finder(char*);
 void create_channel();
+int channel_finder(char*);
 void join_channel();
 void send_message();
 void refresh();
@@ -32,98 +34,98 @@ void logout();
 
 int server_socket, client_socket;
 int channel_id=0, user_id=0;
-char token[100];
+char username[100],password[100],token[100],channelname[100],message[100];
 struct sockaddr_in server, client;
 
 
+// The User structure
 typedef struct use
 {
 	char username[100];
 	char password[100];
 	char token[100];
+	int channel_id;
 }USER;
-USER user;
+USER user[100];
 
+// The Channel structure
 typedef struct chann
 {
 	char name[100];
-	char message[100];
 	int last_message;
-	int id;
+	int user_id[100];
+	int users;
 }CHANNEL;
-CHANNEL channel;
+CHANNEL channel[100];
 
 
 
 
 
-// Function designed for chat between client and server.
-void recieve()
+void recieve()   /************************** Recieve *****************************/
 {
+	// Function designed for chatting between client and server.
+
 	char buffer[MAX];
-	int n;
-		memset(buffer, 0, sizeof(buffer));
 
-		// Read the message from client and copy it to buffer
-		recv(client_socket, buffer, sizeof(buffer), 0);
+	memset(buffer, 0, sizeof(buffer));
 
-		order_finder(buffer);
+	// Read the message from client and copy it to buffer
+	recv(client_socket, buffer, sizeof(buffer), 0);
 
-		// Print buffer which contains the client message
-		//printf("From client: %s\t To client : ", buffer);
-		//memset(buffer, 0, sizeof(buffer));
-		//n = 0;
-		//// Copy server message to the buffer
-		//while ((buffer[n++] = getchar()) != '\n')
-		//	;
+	// Function to find what is the client's request
+	order_finder(buffer);
 
-		//// Send the buffer to client
-		//send(client_socket, buffer, sizeof(buffer), 0);
+	// Print buffer which contains the client message
+	printf("\rThe client asks : %s", buffer);
+	memset(buffer, 0, sizeof(buffer));
 
-		// If the message starts with "exit" then server exits and chat ends
-		if (strncmp("exit", buffer, 4) == 0)
-		{
-			printf("Server stopping...\n");
-			return;
-		}
+
+	// If the message starts with "exit" then server exits and chat ends
+	if (strncmp("exit", buffer, 4) == 0)
+	{
+		printf("Server stopping...\n");
+		return;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void order_finder(char* buffer) {
+void order_finder(char* buffer) {  /************************** Order Finder *****************************/
+
 	if (strncmp(buffer, "register", 8) == 0) {
-		sscanf(buffer, "%*s %[^',']%*c%s", user.username, user.password);
+		sscanf(buffer, "%*s %[^',']%*c%s", username, password);
 		create_account();
 	}
 	else if (strncmp(buffer, "login", 5) == 0) {
-		sscanf(buffer, "%*s %[^',']%*c%s", user.username, user.password);
+		sscanf(buffer, "%*s %[^',']%*c%s", username, password);
 		signin();
 	}
 	else if (strncmp(buffer, "create channel", 14) == 0) {
-		sscanf(buffer, "%*s%*s %[^',']%*c%s", channel.name, token);
+		sscanf(buffer, "%*s%*s %[^',']%*c%s", channelname, token);
 		create_channel();
 	}
 	else if (strncmp(buffer, "join channel", 12) == 0) {
-		sscanf(buffer, "%*s%*s %[^',']%*c%s", channel.name, token);
+		sscanf(buffer, "%*s%*s %[^',']%*c%s", channelname, token);
 		join_channel();
 	}
 	else if (strncmp(buffer, "send", 4) == 0) {
-		sscanf(buffer, "%*s %[^',']%*c%s", channel.message, token);
+		sscanf(buffer, "%*s %[^',']%*c%s", message, token);
 		send_message();
 	}
-	if (strncmp(buffer, "refresh", 7) == 0) {
+	else if (strncmp(buffer, "refresh", 7) == 0) {
 		sscanf(buffer, "%*s %s",  token);
 		refresh();
 	}
-	if (strncmp(buffer, "channel members", 15) == 0) {
+	else if (strncmp(buffer, "channel members", 15) == 0) {
 		sscanf(buffer, "%*s%*s%s", token);
 		channel_members();
 	}
-	if (strncmp(buffer, "leave", 5) == 0) {
+	else if (strncmp(buffer, "leave", 5) == 0) {
 		sscanf(buffer, "%*s %s", token);
 		leave_channel();
 	}
-	if (strncmp(buffer, "logout", 6) == 0) {
+	else if (strncmp(buffer, "logout", 6) == 0) {
 		sscanf(buffer, "%*s %s", token);
 		logout();
 	}
@@ -136,7 +138,7 @@ void create_account() {  //----------------------------------- CREATE ACCOUNT --
 	char buffer[MAX];
 	FILE* userfile;
 	char filename[100];
-	sprintf(filename, "./Resources/Users/%s.cyko", user.username);
+	sprintf(filename, "./Resources/Users/%s.cyko", username);
 	if (access(filename, 0) != -1) {	// file exists
 		sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User already exists!\"}");
 	}
@@ -144,10 +146,11 @@ void create_account() {  //----------------------------------- CREATE ACCOUNT --
 		sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
 		userfile = fopen(filename, "w");
 		// Saving in file
-		fprintf(userfile, "{\"username\":\"%s\",\"password\":\"%s\"}", user.username, user.password);
+		fprintf(userfile, "{\"username\":\"%s\",\"password\":\"%s\"}", username, password);
 		fclose(userfile);
-		user_id++;
+
 	}
+
 	// Send the buffer to client
 	send(client_socket, buffer, sizeof(buffer), 0);
 	
@@ -155,21 +158,24 @@ void create_account() {  //----------------------------------- CREATE ACCOUNT --
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void signin() {
+void signin() {   /************************** Sign-In *****************************/
 
 	char buffer[MAX];
 	char filename[100];
-	sprintf(filename, "./Resources/Users/%s.cyko", user.username);
+	sprintf(filename, "./Resources/Users/%s.cyko", username);
 	if (access(filename, 0) != -1) {    // file exists
 		FILE* userfile;
 		userfile = fopen(filename, "r");
 		char js[100];
 		fgets(js,100,userfile);
 		cJSON* out = cJSON_Parse(js);
-		char *password = cJSON_GetObjectItem(out, "password")->valuestring;
-		if (strcmp(password, user.password) == 0) {
-			strcpy(user.token , token_generator());
-			sprintf(buffer, "{\"type\": \"AuthToken\", \"content\": \"%s\"}",user.token );
+		char *pass = cJSON_GetObjectItem(out, "password")->valuestring;
+		if (strcmp(pass, password) == 0) {
+			strcpy(user[user_id].token , token_generator());
+			sprintf(buffer, "{\"type\": \"AuthToken\", \"content\": \"%s\"}", user[user_id].token);
+			user[user_id].channel_id = -1;
+			strcpy(user[user_id].username, username);
+			user_id++;
 		}
 		else
 			sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Password is not correct!\"}");
@@ -184,7 +190,8 @@ void signin() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-char* token_generator() {
+char* token_generator() {	 /************************** Token Generator *****************************/
+
 	srand(time(NULL));
 	char *string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	int n = 16;
@@ -197,13 +204,22 @@ char* token_generator() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void create_channel() {
+int id_finder(char* token) {
+	for (int i = 0; i < user_id; i++) {
+		if (strcmp(token, user[i].token) == 0) return i;
+	}
+	return -1;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void create_channel() {	 /************************** Create Acount *****************************/
 
 	char buffer[MAX];
-	if (strcmp(token, user.token) != 0) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	if (id_finder(token) == -1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
 	else {
 		char filename[100];
-		sprintf(filename, "./Resources/Channels/%s.cyko", channel.name);
+		sprintf(filename, "./Resources/Channels/%s.cyko", channelname);
 		
 		if (access(filename, 0) != -1) {    // file exists		
 			sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Channel already exists!\"}");
@@ -222,10 +238,10 @@ void create_channel() {
 			char buff[100];
 			cJSON_AddItemToArray(messages, message = cJSON_CreateObject());
 			cJSON_AddItemToObject(message, "sender", cJSON_CreateString("server"));
-			sprintf(buff, "%s created channel", user.username);
+			sprintf(buff, "%s created channel", user[id_finder(token)].username);
 			cJSON_AddItemToObject(message, "content", cJSON_CreateString(buff));
 
-			cJSON_AddItemToObject(add, "name", cJSON_CreateString(channel.name));
+			cJSON_AddItemToObject(add, "name", cJSON_CreateString(channelname));
 
 			FILE* channelfile;
 			channelfile = fopen(filename, "w");
@@ -236,24 +252,40 @@ void create_channel() {
 			cJSON_Delete(add);
 
 			sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
-		}
-		// Send the buffer to client
-		send(client_socket, buffer, sizeof(buffer), 0);
 
+			strcpy(channel[channel_id].name, channelname);
+			channel[channel_id++].users = 0;
+
+			// Assining channel's last read message to 0 and adding the user's id to channel's online users;
+			channel[channel_finder(channelname)].last_message = 0;
+			channel[channel_finder(channelname)].user_id[channel[channel_finder(channelname)].users++] = id_finder(token);
+			user[id_finder(token)].channel_id = channel_finder(channelname);
+		}
+		
 	}
+	// Send the buffer to client
+		send(client_socket, buffer, sizeof(buffer), 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void join_channel() {
+int channel_finder(char* name) {
+	for (int i = 0; i < channel_id; i++) {
+		if (strcmp(name, channel[i].name) == 0) return i;
+	}
+	return -1;
+}
 
-	channel.last_message = 0;
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void join_channel() {	 /************************** Join Channel *****************************/
+
 	char buffer[MAX];
-	if (strcmp(token, user.token) != 0) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	if (id_finder(token) == -1) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
 	else {
 		FILE* channelfile;
 		char filename[100];
-		sprintf(filename, "./Resources/Channels/%s.cyko", channel.name);
+		sprintf(filename, "./Resources/Channels/%s.cyko", channelname);
 		if (access(filename, 0) != -1) {	// file exists
 			sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
 
@@ -271,7 +303,7 @@ void join_channel() {
 			item = cJSON_CreateObject();
 			cJSON_AddItemToObject(item, "sender", cJSON_CreateString("server"));
 			char buf[100];
-			sprintf(buf, "%s joined channel %s", user.username, channel.name);
+			sprintf(buf, "%s joined channel %s", user[id_finder(token)].username, channelname);
 			cJSON_AddItemToObject(item, "content", cJSON_CreateString(buf));
 
 			// insert the new message into the existing array
@@ -284,6 +316,15 @@ void join_channel() {
 
 			// Closing the file
 			fclose(channelfile);
+			
+			strcpy(channel[channel_id].name, channelname);
+			channel[channel_id++].users = 0;
+
+			// Assining channel's last read message to 0 and adding the user's id to channel's online users;
+			channel[channel_finder(channelname)].last_message = 0;
+			channel[channel_finder(channelname)].user_id[channel[channel_finder(channelname)].users++] = id_finder(token);
+			user[id_finder(token)].channel_id = channel_finder(channelname);
+		
 		}
 		else {	// file doesn't exist
 			sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Channel does not exist!\"}");
@@ -296,10 +337,12 @@ void join_channel() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void send_message() {
+void send_message() {	 /************************** Send Message *****************************/
 
+	printf("%d", user[id_finder(token)].channel_id);
 	char buffer[MAX];
-	if (strcmp(token, user.token) != 0) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	if (id_finder(token) == -1)	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	else if(user[id_finder(token)].channel_id==-1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
 	else {
 		sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
 
@@ -307,7 +350,7 @@ void send_message() {
 
 		FILE* channelfile;
 		char filename[100];
-		sprintf(filename, "./Resources/Channels/%s.cyko", channel.name);
+		sprintf(filename, "./Resources/Channels/%s.cyko", channel[user[id_finder(token)].channel_id].name);
 
 		channelfile = fopen(filename, "r");
 		char js[10000];
@@ -322,8 +365,8 @@ void send_message() {
 
 		// Create a new array item and add sender and message
 		item = cJSON_CreateObject();
-		cJSON_AddItemToObject(item, "sender", cJSON_CreateString(user.username));
-		cJSON_AddItemToObject(item, "content", cJSON_CreateString(channel.message));
+		cJSON_AddItemToObject(item, "sender", cJSON_CreateString(user[id_finder(token)].username));
+		cJSON_AddItemToObject(item, "content", cJSON_CreateString(message));
 
 		// insert the new message into the existing array
 		cJSON_AddItemToArray(msg_array, item);
@@ -341,16 +384,17 @@ void send_message() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void refresh() {
+void refresh() {	 /************************** Rrefresh *****************************/
 	char mssg[10000]="",end[10000]="";
 	char filename[100];
 
-	if (strcmp(token, user.token) != 0) 	sprintf(end, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	if (id_finder(token) == -1)	sprintf(end, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	else if (user[id_finder(token)].channel_id == -1) sprintf(end, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
 	else {
 
 		/***************** Extracting messages from the file ********************/
 		FILE* channelfile;
-		sprintf(filename, "./Resources/Channels/%s.cyko", channel.name);
+		sprintf(filename, "./Resources/Channels/%s.cyko", channel[user[id_finder(token)].channel_id].name);
 		channelfile = fopen(filename, "r");
 		char js[10000];
 		fgets(js, 10000, channelfile);
@@ -360,10 +404,10 @@ void refresh() {
 		cJSON* out = cJSON_Parse(js);
 		cJSON *cont = cJSON_GetObjectItem(out, "messages");
 		char *allmsg = cJSON_PrintUnformatted(cont);
-		for (int i = channel.last_message + 1; allmsg[i+1]; i++)
-			mssg[i - (channel.last_message + 1)] = allmsg[i];
+		for (int i = channel[user[id_finder(token)].channel_id].last_message + 1; allmsg[i+1]; i++)
+			mssg[i - (channel[user[id_finder(token)].channel_id].last_message + 1)] = allmsg[i];
 		sprintf(end, "{\"type\": \"List\",\"content\":[%s]}", mssg);
-		channel.last_message = strlen(allmsg) - 1;
+		channel[user[id_finder(token)].channel_id].last_message = strlen(allmsg) - 1;
 	}
 	
 	// Send the buffer to client
@@ -372,10 +416,11 @@ void refresh() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void channel_members() {
+void channel_members() {	 /************************** Channel Members *****************************/
 
 	char buffer[MAX];
-	if (strcmp(token, user.token) != 0) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	if (id_finder(token) == -1)	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	else if (user[id_finder(token)].channel_id == -1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
 	else {
 		
 		cJSON *add, *content;
@@ -385,9 +430,9 @@ void channel_members() {
 
 		cJSON_AddItemToObject(add, "type", cJSON_CreateString("list"));
 		cJSON_AddItemToObject(add, "content", content);
-		cJSON_AddItemToArray(content, cJSON_CreateString(user.username));
+		for (int i = 0; i < channel[user[id_finder(token)].channel_id].users;i++)
+			cJSON_AddItemToArray(content, cJSON_CreateString(user[channel[user[id_finder(token)].channel_id].user_id[i]].username));
 		strcpy(buffer,cJSON_PrintUnformatted(add));
-		printf("%s", buffer);
 		cJSON_Delete(add);
 	}
 	// Send the buffer to client
@@ -397,11 +442,20 @@ void channel_members() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void leave_channel() {
+void leave_channel() {	 /************************** Leave channel *****************************/
 
 	char buffer[MAX];
-	if (strcmp(token, user.token) != 0) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	if (id_finder(token) == -1) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	else if (user[id_finder(token)].channel_id == -1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
 	else {
+		int index;
+		for (int i = 0; i < channel[user[id_finder(token)].channel_id].users; i++) {
+			if (channel[user[id_finder(token)].channel_id].user_id[i] == id_finder(token)) index = i;
+		}
+		for (int i = index + 1; i < channel[user[id_finder(token)].channel_id].users; i++) {
+			channel[user[id_finder(token)].channel_id].user_id[i - 1] = channel[user[id_finder(token)].channel_id].user_id[i];
+		}
+		channel[user[id_finder(token)].channel_id].users--;
 		sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
 	}
 	// Send the buffer to client
@@ -411,14 +465,13 @@ void leave_channel() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void logout() {
+void logout() {	 /************************** Logout *****************************/
 
 	char buffer[MAX];
-	if (strcmp(token, user.token) != 0) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	if (id_finder(token) == -1)	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
 	else {
 		sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
 	}
 	// Send the buffer to client
 	send(client_socket, buffer, sizeof(buffer), 0);
-
 }

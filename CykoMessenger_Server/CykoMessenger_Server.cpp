@@ -1,3 +1,8 @@
+/*
+Cyko Server 2020 © All rights reserved
+*/
+
+
 #include "stdafx.h"
 #include "Functions.c"
 #include <winsock2.h>
@@ -44,7 +49,7 @@ int main()
 		if ((bind(server_socket, (SA *)&server, sizeof(server))) != 0)
 		{
 			printf("Socket binding failed...\n");
-			exit(0);
+			return 0;
 		}
 		else
 			printf("Socket successfully bound...\n");
@@ -53,7 +58,7 @@ int main()
 		if ((listen(server_socket, 5)) != 0)
 		{
 			printf("Listen failed...\n");
-			exit(0);
+			return 0;
 		}
 		else
 			printf("Server listening..\n");
@@ -67,7 +72,7 @@ int main()
 			if (client_socket < 0)
 			{
 				printf("Server accceptance failed...\n");
-				exit(0);
+				return 0;
 			}
 			else
 				if (!flag) {
