@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <Windows.h>
 #include <io.h> 
+#include <time.h>
 #include <conio.h>
 #include "cJSON.h"
 #include "cJSON.c"
@@ -19,6 +20,7 @@ void socket_connect();
 void order_finder(char* buffer);
 void create_account();
 void signin();
+int online(char*);
 char* token_generator();
 int id_finder(char*);
 void create_channel();
@@ -163,7 +165,8 @@ void signin() {   /************************** Sign-In **************************
 	char buffer[MAX];
 	char filename[100];
 	sprintf(filename, "./Resources/Users/%s.cyko", username);
-	if (access(filename, 0) != -1) {    // file exists
+	if(online(username)) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User has already logged in !\"}");
+	else if (access(filename, 0) != -1) {    // file exists
 		FILE* userfile;
 		userfile = fopen(filename, "r");
 		char js[100];
@@ -474,4 +477,13 @@ void logout() {	 /************************** Logout ****************************
 	}
 	// Send the buffer to client
 	send(client_socket, buffer, sizeof(buffer), 0);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+int online(char* name) {
+	for (int i = 0; i < user_id; i++) {
+		if (strcmp(user[i].username, name) == 0) return 1;
+	}
+	return 0;
 }
