@@ -1,12 +1,11 @@
-﻿Build started 1/26/2020 9:17:03 PM.
+﻿Build started 1/31/2020 8:16:57 PM.
      1>Project "C:\Users\arash\Desktop\Uniwork\F of P\Project\Phase 2\cyko_server\CykoMessenger_Server\CykoMessenger_Server.vcxproj" on node 2 (Build target(s)).
      1>Link:
          D:\Program Files\Visual Studio\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\arash\Desktop\Uniwork\F of P\Project\Phase 2\cyko_server\Debug\CykoMessenger_Server.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"C:\Users\arash\Desktop\Uniwork\F of P\Project\Phase 2\cyko_server\Debug\CykoMessenger_Server.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\arash\Desktop\Uniwork\F of P\Project\Phase 2\cyko_server\Debug\CykoMessenger_Server.lib" /MACHINE:X86 Debug\CykoMessenger_Server.obj
          Debug\stdafx.obj
-            Creating library C:\Users\arash\Desktop\Uniwork\F of P\Project\Phase 2\cyko_server\Debug\CykoMessenger_Server.lib and object C:\Users\arash\Desktop\Uniwork\F of P\Project\Phase 2\cyko_server\Debug\CykoMessenger_Server.exp
          CykoMessenger_Server.vcxproj -> C:\Users\arash\Desktop\Uniwork\F of P\Project\Phase 2\cyko_server\Debug\CykoMessenger_Server.exe
      1>Done Building Project "C:\Users\arash\Desktop\Uniwork\F of P\Project\Phase 2\cyko_server\CykoMessenger_Server\CykoMessenger_Server.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.63
+Time Elapsed 00:00:00.43

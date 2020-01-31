@@ -31,6 +31,8 @@ void refresh();
 void channel_members();
 void leave_channel();
 void logout();
+void search_members();
+void search_message();
 
 
 
@@ -130,6 +132,14 @@ void order_finder(char* buffer) {  /************************** Order Finder ****
 	else if (strncmp(buffer, "logout", 6) == 0) {
 		sscanf(buffer, "%*s %s", token);
 		logout();
+	}
+	else if (strncmp(buffer, "search mem", 10) == 0) {
+		sscanf(buffer, "%*s %*s %[^',']%*c%s", username, token);
+		search_members();
+	}
+	else if (strncmp(buffer, "search mes", 10) == 0) {
+		sscanf(buffer, "%*s %*s %[^',']%*c%s", message, token);
+		search_message();
 	}
 }
 
@@ -486,4 +496,77 @@ int online(char* name) {
 		if (strcmp(user[i].username, name) == 0) return 1;
 	}
 	return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void search_members() {
+
+	int flag=0;
+	char buffer[MAX];
+	if (id_finder(token) == -1) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	else if (user[id_finder(token)].channel_id == -1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
+	else {
+		for (int i = 0; i < channel[user[id_finder(token)].channel_id].users; i++) {
+			if (strcmp(username, user[channel[user[id_finder(token)].channel_id].user_id[i]].username) == 0) { 
+				sprintf(buffer, "{\"type\": \"result\", \"content\": \"true\"}");
+				flag = 1;
+			}
+		}
+		if(!flag)	sprintf(buffer, "{\"type\": \"result\", \"content\": \"false\"}");
+	}
+
+	// Send the buffer to client
+	send(client_socket, buffer, sizeof(buffer), 0);
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void search_message() {
+
+	char buffer[10000];
+	if (id_finder(token) == -1) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	else if (user[id_finder(token)].channel_id == -1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
+	else {
+
+		cJSON *add, *content;
+
+		/***************** Extracting messages from the file ********************/
+		char filename[100];
+		FILE* channelfile;
+		sprintf(filename, "./Resources/Channels/%s.cyko", channel[user[id_finder(token)].channel_id].name);
+		channelfile = fopen(filename, "r");
+		char js[10000];
+		fgets(js, 10000, channelfile);
+		fclose(channelfile);
+
+		/***************************** Finding Nemo (Messages)! ****************************/
+		cJSON* out = cJSON_Parse(js);
+		cJSON *cont = cJSON_GetObjectItem(out, "messages");
+		int count = cJSON_GetArraySize(cont);
+
+		add = cJSON_CreateObject();
+		content = cJSON_CreateArray();
+		cJSON_AddItemToObject(add, "type", cJSON_CreateString("list"));
+		cJSON_AddItemToObject(add, "message", content);
+
+		for (int i = 0; i < count; i++) {
+			cJSON* mas = cJSON_GetArrayItem(cont, i);
+			char* ms = cJSON_GetObjectItem(mas, "content")->valuestring;
+			char* p;
+			p = strstr(ms, message);
+			if (p) {
+
+				/************************ Adding the found message to the JSON *************************/
+
+				cJSON_AddItemToArray(content, cJSON_CreateString(ms));
+			}
+		}
+		strcpy(buffer, cJSON_PrintUnformatted(add));
+		cJSON_Delete(add);
+	}
+	// Send the buffer to client
+	send(client_socket, buffer, sizeof(buffer), 0);
+
 }
