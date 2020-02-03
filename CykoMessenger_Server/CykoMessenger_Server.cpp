@@ -12,6 +12,8 @@ Cyko Server 2020 © All rights reserved
 #include <Windows.h>
 #include <conio.h>
 #include "cJSON.h"
+#include "Cyko_JSON.h"
+
 #include <string.h>
 #pragma comment(lib,"WS2_32")
 
@@ -69,6 +71,7 @@ int main()
 			// Accept the data packet from client and verify
 			int len = sizeof(client);
 			client_socket = accept(server_socket, (SA *)&client, &len);
+
 			if (client_socket < 0)
 			{
 				printf("Server accceptance failed...\n");

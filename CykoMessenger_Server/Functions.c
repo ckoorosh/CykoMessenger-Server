@@ -8,8 +8,10 @@
 #include <io.h> 
 #include <time.h>
 #include <conio.h>
-#include "cJSON.h"
-#include "cJSON.c"
+//#include "cJSON.h"
+//#include "cJSON.c"
+#include "Cyko_JSON.h"
+#include "Cyko_JSON.c"
 #include <string.h>
 #define MAX 80
 #define PORT 12345
@@ -77,11 +79,12 @@ void recieve()   /************************** Recieve ***************************
 	// Read the message from client and copy it to buffer
 	recv(client_socket, buffer, sizeof(buffer), 0);
 
+	// Print buffer which contains the client message
+	printf("\rThe client asks : %s", buffer);
+
 	// Function to find what is the client's request
 	order_finder(buffer);
 
-	// Print buffer which contains the client message
-	printf("\rThe client asks : %s", buffer);
 	memset(buffer, 0, sizeof(buffer));
 
 
@@ -181,8 +184,8 @@ void signin() {   /************************** Sign-In **************************
 		userfile = fopen(filename, "r");
 		char js[100];
 		fgets(js,100,userfile);
-		cJSON* out = cJSON_Parse(js);
-		char *pass = cJSON_GetObjectItem(out, "password")->valuestring;
+		ckJSON* out = Parse_ckJSON(js);
+		char *pass = GetObjectItem_ckJSON(out, "password")->valuestring;
 		if (strcmp(pass, password) == 0) {
 			strcpy(user[user_id].token , token_generator());
 			sprintf(buffer, "{\"type\": \"AuthToken\", \"content\": \"%s\"}", user[user_id].token);
@@ -241,28 +244,38 @@ void create_channel() {	 /************************** Create Acount *************
 		else { 	// file doesn't exist
 
 				/************************* Creating JSON ***************************/
-			cJSON *add, *messages, *message;
+			//cJSON *add, *messages, *message;
+			ckJSON *add, *messages, *message;
 
-			add = cJSON_CreateObject();
-			messages = cJSON_CreateArray();
+			/*add = cJSON_CreateObject();
+			messages = cJSON_CreateArray();*/
+			add = CreateObject_ckJSON();
+			messages = CreateArray_ckJSON();
 
-			cJSON_AddItemToObject(add, "messages", messages);
+			//cJSON_AddItemToObject(add, "messages", messages);
+			AddItemToObject_ckJSON(add, "messages", messages);
 
 			char buff[100];
-			cJSON_AddItemToArray(messages, message = cJSON_CreateObject());
-			cJSON_AddItemToObject(message, "sender", cJSON_CreateString("server"));
+			/*cJSON_AddItemToArray(messages, message = cJSON_CreateObject());
+			cJSON_AddItemToObject(message, "sender", cJSON_CreateString("server"));*/
+			AddItemToArray_ckJSON(messages, message = CreateObject_ckJSON());
+			AddItemToObject_ckJSON(message, "sender", CreateString_ckJSON("server"));
 			sprintf(buff, "%s created channel", user[id_finder(token)].username);
-			cJSON_AddItemToObject(message, "content", cJSON_CreateString(buff));
+			//cJSON_AddItemToObject(message, "content", cJSON_CreateString(buff));
+			AddItemToObject_ckJSON(message, "content", CreateString_ckJSON(buff));
 
-			cJSON_AddItemToObject(add, "name", cJSON_CreateString(channelname));
+			//cJSON_AddItemToObject(add, "name", cJSON_CreateString(channelname));
+			AddItemToObject_ckJSON(add, "name", CreateString_ckJSON(channelname));
 
 			FILE* channelfile;
 			channelfile = fopen(filename, "w");
 			char* addjs;
-			addjs = cJSON_PrintUnformatted(add);
+			//addjs = cJSON_PrintUnformatted(add);
+			addjs = PrintUnformatted_ckJSON(add);
 			fprintf(channelfile, "%s", addjs);
 			fclose(channelfile);
-			cJSON_Delete(add);
+			//cJSON_Delete(add);
+			Delete_ckJSON(add);
 
 			sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
 
@@ -308,24 +321,32 @@ void join_channel() {	 /************************** Join Channel ****************
 			fgets(js, 10000, channelfile);
 			fclose(channelfile);
 
-			cJSON *msg_array, *item;
+			/*cJSON *msg_array, *item;
 			cJSON *messages = cJSON_Parse(js);
-			msg_array = cJSON_GetObjectItem(messages, "messages");
+			msg_array = cJSON_GetObjectItem(messages, "messages");*/
+			ckJSON *msg_array, *item;
+			ckJSON *messages = Parse_ckJSON(js);
+			msg_array = GetObjectItem_ckJSON(messages, "messages");
 
 			// Create a new array item and add sender and message
-			item = cJSON_CreateObject();
-			cJSON_AddItemToObject(item, "sender", cJSON_CreateString("server"));
+			/*item = cJSON_CreateObject();
+			cJSON_AddItemToObject(item, "sender", cJSON_CreateString("server"));*/
+			item = CreateObject_ckJSON();
+			AddItemToObject_ckJSON(item, "sender", CreateString_ckJSON("server"));
 			char buf[100];
 			sprintf(buf, "%s joined channel %s", user[id_finder(token)].username, channelname);
-			cJSON_AddItemToObject(item, "content", cJSON_CreateString(buf));
+			//cJSON_AddItemToObject(item, "content", cJSON_CreateString(buf));
+			AddItemToObject_ckJSON(item, "content", CreateString_ckJSON(buf));
 
 			// insert the new message into the existing array
-			cJSON_AddItemToArray(msg_array, item);
-			
+			//cJSON_AddItemToArray(msg_array, item);
+			AddItemToArray_ckJSON(msg_array, item);
 			channelfile = fopen(filename, "w");
-			fprintf(channelfile, cJSON_PrintUnformatted(messages));
+			//fprintf(channelfile, cJSON_PrintUnformatted(messages));
+			fprintf(channelfile, PrintUnformatted_ckJSON(messages));
 
-			cJSON_Delete(messages);
+			//cJSON_Delete(messages);
+			Delete_ckJSON(messages);
 
 			// Closing the file
 			fclose(channelfile);
@@ -371,23 +392,22 @@ void send_message() {	 /************************** Send Message ****************
 		fclose(channelfile);
 
 		/************************* Updting the messages ****************************/
-
-		cJSON *msg_array, *item;
+		/*cJSON *msg_array, *item;
 		cJSON *messages = cJSON_Parse(js);
-		msg_array = cJSON_GetObjectItem(messages, "messages");
-
+		msg_array = cJSON_GetObjectItem(messages, "messages");*/
+		ckJSON *msg_array, *item;
+		ckJSON *messages = Parse_ckJSON(js);
+		msg_array = GetObjectItem_ckJSON(messages, "messages");
 		// Create a new array item and add sender and message
-		item = cJSON_CreateObject();
-		cJSON_AddItemToObject(item, "sender", cJSON_CreateString(user[id_finder(token)].username));
-		cJSON_AddItemToObject(item, "content", cJSON_CreateString(message));
-
+		item = CreateObject_ckJSON();
+		AddItemToObject_ckJSON(item, "sender", CreateString_ckJSON(user[id_finder(token)].username));
+		AddItemToObject_ckJSON(item, "content", CreateString_ckJSON(message));
 		// insert the new message into the existing array
-		cJSON_AddItemToArray(msg_array, item);
-
+		AddItemToArray_ckJSON(msg_array, item);
 		channelfile = fopen(filename, "w");
-		fprintf(channelfile, cJSON_PrintUnformatted(messages));
+		fprintf(channelfile, PrintUnformatted_ckJSON(messages));
 		fclose(channelfile);
-		cJSON_Delete(messages);
+		Delete_ckJSON(messages);
 	}
 
 	// Send the buffer to client
@@ -400,7 +420,6 @@ void send_message() {	 /************************** Send Message ****************
 void refresh() {	 /************************** Rrefresh *****************************/
 	char mssg[10000]="",end[10000]="";
 	char filename[100];
-
 	if (id_finder(token) == -1)	sprintf(end, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
 	else if (user[id_finder(token)].channel_id == -1) sprintf(end, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
 	else {
@@ -414,9 +433,10 @@ void refresh() {	 /************************** Rrefresh *************************
 		fclose(channelfile);
 
 		/***************************** Refreshing ... ****************************/
-		cJSON* out = cJSON_Parse(js);
-		cJSON *cont = cJSON_GetObjectItem(out, "messages");
-		char *allmsg = cJSON_PrintUnformatted(cont);
+		ckJSON* out = Parse_ckJSON(js);
+		ckJSON *cont = GetObjectItem_ckJSON(out, "messages");
+		char *allmsg = PrintUnformatted_ckJSON(cont);
+
 		for (int i = channel[user[id_finder(token)].channel_id].last_message + 1; allmsg[i+1]; i++)
 			mssg[i - (channel[user[id_finder(token)].channel_id].last_message + 1)] = allmsg[i];
 		sprintf(end, "{\"type\": \"List\",\"content\":[%s]}", mssg);
@@ -436,17 +456,17 @@ void channel_members() {	 /************************** Channel Members **********
 	else if (user[id_finder(token)].channel_id == -1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
 	else {
 		
-		cJSON *add, *content;
+		ckJSON *add, *content;
 
-		add = cJSON_CreateObject();
-		content = cJSON_CreateArray();
+		add = CreateObject_ckJSON();
+		content = CreateArray_ckJSON();
 
-		cJSON_AddItemToObject(add, "type", cJSON_CreateString("list"));
-		cJSON_AddItemToObject(add, "content", content);
+		AddItemToObject_ckJSON(add, "type", CreateString_ckJSON("list"));
+		AddItemToObject_ckJSON(add, "content", content);
 		for (int i = 0; i < channel[user[id_finder(token)].channel_id].users;i++)
-			cJSON_AddItemToArray(content, cJSON_CreateString(user[channel[user[id_finder(token)].channel_id].user_id[i]].username));
-		strcpy(buffer,cJSON_PrintUnformatted(add));
-		cJSON_Delete(add);
+			AddItemToArray_ckJSON(content, CreateString_ckJSON(user[channel[user[id_finder(token)].channel_id].user_id[i]].username));
+		strcpy(buffer,PrintUnformatted_ckJSON(add));
+		Delete_ckJSON(add);
 	}
 	// Send the buffer to client
 	send(client_socket, buffer, sizeof(buffer), 0);
@@ -461,19 +481,62 @@ void leave_channel() {	 /************************** Leave channel **************
 	if (id_finder(token) == -1) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
 	else if (user[id_finder(token)].channel_id == -1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
 	else {
-		int index;
-		for (int i = 0; i < channel[user[id_finder(token)].channel_id].users; i++) {
-			if (channel[user[id_finder(token)].channel_id].user_id[i] == id_finder(token)) index = i;
-		}
-		for (int i = index + 1; i < channel[user[id_finder(token)].channel_id].users; i++) {
-			channel[user[id_finder(token)].channel_id].user_id[i - 1] = channel[user[id_finder(token)].channel_id].user_id[i];
-		}
-		channel[user[id_finder(token)].channel_id].users--;
-		sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
-	}
-	// Send the buffer to client
-	send(client_socket, buffer, sizeof(buffer), 0);
+		FILE* channelfile;
+		char filename[100];
+		sprintf(filename, "./Resources/Channels/%s.cyko", channelname);
+		if (access(filename, 0) != -1) {	// file exists
 
+			/************************* Updting the messages ****************************/
+			channelfile = fopen(filename, "r");
+			char js[10000];
+			fgets(js, 10000, channelfile);
+			fclose(channelfile);
+
+			/*cJSON *msg_array, *item;
+			cJSON *messages = cJSON_Parse(js);
+			msg_array = cJSON_GetObjectItem(messages, "messages");*/
+			ckJSON *msg_array, *item;
+			ckJSON *messages = Parse_ckJSON(js);
+			msg_array = GetObjectItem_ckJSON(messages, "messages");
+
+			// Create a new array item and add sender and message
+			/*item = cJSON_CreateObject();
+			cJSON_AddItemToObject(item, "sender", cJSON_CreateString("server"));*/
+			item = CreateObject_ckJSON();
+			AddItemToObject_ckJSON(item, "sender", CreateString_ckJSON("server"));
+			char buf[100];
+			sprintf(buf, "%s left channel %s", user[id_finder(token)].username, channelname);
+			//cJSON_AddItemToObject(item, "content", cJSON_CreateString(buf));
+			AddItemToObject_ckJSON(item, "content", CreateString_ckJSON(buf));
+
+			// insert the new message into the existing array
+			//cJSON_AddItemToArray(msg_array, item);
+			AddItemToArray_ckJSON(msg_array, item);
+			channelfile = fopen(filename, "w");
+			//fprintf(channelfile, cJSON_PrintUnformatted(messages));
+			fprintf(channelfile, PrintUnformatted_ckJSON(messages));
+
+			//cJSON_Delete(messages);
+			Delete_ckJSON(messages);
+
+			// Closing the file
+			fclose(channelfile);
+
+
+			int index;
+			for (int i = 0; i < channel[user[id_finder(token)].channel_id].users; i++) {
+				if (channel[user[id_finder(token)].channel_id].user_id[i] == id_finder(token)) index = i;
+			}
+			for (int i = index + 1; i < channel[user[id_finder(token)].channel_id].users; i++) {
+				channel[user[id_finder(token)].channel_id].user_id[i - 1] = channel[user[id_finder(token)].channel_id].user_id[i];
+			}
+			channel[user[id_finder(token)].channel_id].users--;
+			sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
+		}
+		// Send the buffer to client
+		send(client_socket, buffer, sizeof(buffer), 0);
+
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -530,7 +593,7 @@ void search_message() {
 	else if (user[id_finder(token)].channel_id == -1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
 	else {
 
-		cJSON *add, *content;
+		ckJSON *add, *content;
 
 		/***************** Extracting messages from the file ********************/
 		char filename[100];
@@ -542,29 +605,29 @@ void search_message() {
 		fclose(channelfile);
 
 		/***************************** Finding Nemo (Messages)! ****************************/
-		cJSON* out = cJSON_Parse(js);
-		cJSON *cont = cJSON_GetObjectItem(out, "messages");
-		int count = cJSON_GetArraySize(cont);
+		ckJSON* out = Parse_ckJSON(js);
+		ckJSON *cont = GetObjectItem_ckJSON(out, "messages");
+		int count = GetArraySize_ckJSON(cont);
 
-		add = cJSON_CreateObject();
-		content = cJSON_CreateArray();
-		cJSON_AddItemToObject(add, "type", cJSON_CreateString("list"));
-		cJSON_AddItemToObject(add, "message", content);
+		add = CreateObject_ckJSON();
+		content = CreateArray_ckJSON();
+		AddItemToObject_ckJSON(add, "type", CreateString_ckJSON("list"));
+		AddItemToObject_ckJSON(add, "message", content);
 
 		for (int i = 0; i < count; i++) {
-			cJSON* mas = cJSON_GetArrayItem(cont, i);
-			char* ms = cJSON_GetObjectItem(mas, "content")->valuestring;
+			ckJSON* mas = GetArrayItem_ckJSON(cont, i);
+			char* ms = GetObjectItem_ckJSON(mas, "content")->valuestring;
 			char* p;
 			p = strstr(ms, message);
 			if (p) {
 
 				/************************ Adding the found message to the JSON *************************/
 
-				cJSON_AddItemToArray(content, cJSON_CreateString(ms));
+				AddItemToArray_ckJSON(content, CreateString_ckJSON(ms));
 			}
 		}
-		strcpy(buffer, cJSON_PrintUnformatted(add));
-		cJSON_Delete(add);
+		strcpy(buffer, PrintUnformatted_ckJSON(add));
+		Delete_ckJSON(add);
 	}
 	// Send the buffer to client
 	send(client_socket, buffer, sizeof(buffer), 0);
