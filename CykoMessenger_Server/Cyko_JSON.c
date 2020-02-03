@@ -428,17 +428,15 @@ void ParseArray_ckJSON(ckJSON *json, const char *value, const char *str, int &st
 	start++;
 	while (1)
 	{
-		switch (value[start])
-		{
-		case '\"':ParseString_ckJSON(item, value, "", start, 1); break;
-		case '{':ParseObject_ckJSON(item, value, "", start, 1); break;
-		case '[':ParseArray_ckJSON(item, value, "", start, 1); break;
-		case ',': break;
-		case ']':flag = 1; break;
-		default:
-			break;
+		if (value[start] == '\"') ParseString_ckJSON(item, value, "", start, 1);
+		else if (value[start] == '{')ParseObject_ckJSON(item, value, "", start, 1);
+		else if (value[start] == '[')ParseArray_ckJSON(item, value, "", start, 1);
+		else if (value[start] == ',') {
+			start++;
+			continue;
 		}
-		if (flag)break;
+		else if (value[start--] == ']')break;
+		else if (value[start] == ']')break;
 		start++;
 	}
 

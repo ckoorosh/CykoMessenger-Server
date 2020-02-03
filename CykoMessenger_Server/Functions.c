@@ -155,10 +155,10 @@ void create_account() {  //----------------------------------- CREATE ACCOUNT --
 	char filename[100];
 	sprintf(filename, "./Resources/Users/%s.cyko", username);
 	if (access(filename, 0) != -1) {	// file exists
-		sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User already exists!\"}");
+		sprintf(buffer, "{\"type\":\"Error\",\"content\":\"User already exists!\"}");
 	}
 	else {	// file doesn't exist
-		sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
+		sprintf(buffer, "{\"type\":\"Successful\",\"content\":\"\"}");
 		userfile = fopen(filename, "w");
 		// Saving in file
 		fprintf(userfile, "{\"username\":\"%s\",\"password\":\"%s\"}", username, password);
@@ -178,7 +178,7 @@ void signin() {   /************************** Sign-In **************************
 	char buffer[MAX];
 	char filename[100];
 	sprintf(filename, "./Resources/Users/%s.cyko", username);
-	if(online(username)) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User has already logged in !\"}");
+	if(online(username)) sprintf(buffer, "{\"type\":\"Error\",\"content\":\"User has already logged in !\"}");
 	else if (access(filename, 0) != -1) {    // file exists
 		FILE* userfile;
 		userfile = fopen(filename, "r");
@@ -188,17 +188,17 @@ void signin() {   /************************** Sign-In **************************
 		char *pass = GetObjectItem_ckJSON(out, "password")->valuestring;
 		if (strcmp(pass, password) == 0) {
 			strcpy(user[user_id].token , token_generator());
-			sprintf(buffer, "{\"type\": \"AuthToken\", \"content\": \"%s\"}", user[user_id].token);
+			sprintf(buffer, "{\"type\":\"AuthToken\",\"content\":\"%s\"}", user[user_id].token);
 			user[user_id].channel_id = -1;
 			strcpy(user[user_id].username, username);
 			user_id++;
 		}
 		else
-			sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Password is not correct!\"}");
+			sprintf(buffer, "{\"type\":\"Error\",\"content\":\"Password is not correct!\"}");
 	}
 
 	else 	// file doesn't exist
-		sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User does not exist!\"}");
+		sprintf(buffer, "{\"type\":\"Error\",\"content\":\"User does not exist!\"}");
 	// Send the buffer to client
 	send(client_socket, buffer, sizeof(buffer), 0);
 
@@ -232,13 +232,13 @@ int id_finder(char* token) {
 void create_channel() {	 /************************** Create Acount *****************************/
 
 	char buffer[MAX];
-	if (id_finder(token) == -1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	if (id_finder(token) == -1) sprintf(buffer, "{\"type\":\"Error\",\"content\":\"Authentication failed!\"}");
 	else {
 		char filename[100];
 		sprintf(filename, "./Resources/Channels/%s.cyko", channelname);
 		
 		if (access(filename, 0) != -1) {    // file exists		
-			sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Channel already exists!\"}");
+			sprintf(buffer, "{\"type\":\"Error\",\"content\":\"Channel already exists!\"}");
 		}
 
 		else { 	// file doesn't exist
@@ -277,7 +277,7 @@ void create_channel() {	 /************************** Create Acount *************
 			//cJSON_Delete(add);
 			Delete_ckJSON(add);
 
-			sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
+			sprintf(buffer, "{\"type\":\"Successful\",\"content\":\"\"}");
 
 			strcpy(channel[channel_id].name, channelname);
 			channel[channel_id++].users = 0;
@@ -307,13 +307,13 @@ int channel_finder(char* name) {
 void join_channel() {	 /************************** Join Channel *****************************/
 
 	char buffer[MAX];
-	if (id_finder(token) == -1) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	if (id_finder(token) == -1) 	sprintf(buffer, "{\"type\":\"Error\",\"content\":\"Authentication failed!\"}");
 	else {
 		FILE* channelfile;
 		char filename[100];
 		sprintf(filename, "./Resources/Channels/%s.cyko", channelname);
 		if (access(filename, 0) != -1) {	// file exists
-			sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
+			sprintf(buffer, "{\"type\":\"Successful\",\"content\":\"\"}");
 
 			/************************* Updting the messages ****************************/
 			channelfile = fopen(filename, "r");
@@ -361,7 +361,7 @@ void join_channel() {	 /************************** Join Channel ****************
 		
 		}
 		else {	// file doesn't exist
-			sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Channel does not exist!\"}");
+			sprintf(buffer, "{\"type\":\"Error\",\"content\":\"Channel does not exist!\"}");
 		}
 	}
 	// Send the buffer to client
@@ -375,10 +375,10 @@ void send_message() {	 /************************** Send Message ****************
 
 	printf("%d", user[id_finder(token)].channel_id);
 	char buffer[MAX];
-	if (id_finder(token) == -1)	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
-	else if(user[id_finder(token)].channel_id==-1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
+	if (id_finder(token) == -1)	sprintf(buffer, "{\"type\":\"Error\",\"content\":\"Authentication failed!\"}");
+	else if(user[id_finder(token)].channel_id==-1) sprintf(buffer, "{\"type\":\"Error\",\"content\":\"User is not online right now!\"}");
 	else {
-		sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
+		sprintf(buffer, "{\"type\":\"Successful\",\"content\":\"\"}");
 
 		/******************* Extracting messages from the file ********************/
 
@@ -420,8 +420,8 @@ void send_message() {	 /************************** Send Message ****************
 void refresh() {	 /************************** Rrefresh *****************************/
 	char mssg[10000]="",end[10000]="";
 	char filename[100];
-	if (id_finder(token) == -1)	sprintf(end, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
-	else if (user[id_finder(token)].channel_id == -1) sprintf(end, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
+	if (id_finder(token) == -1)	sprintf(end, "{\"type\":\"Error\",\"content\":\"Authentication failed!\"}");
+	else if (user[id_finder(token)].channel_id == -1) sprintf(end, "{\"type\":\"Error\",\"content\":\"User is not online right now!\"}");
 	else {
 
 		/***************** Extracting messages from the file ********************/
@@ -439,7 +439,7 @@ void refresh() {	 /************************** Rrefresh *************************
 
 		for (int i = channel[user[id_finder(token)].channel_id].last_message + 1; allmsg[i+1]; i++)
 			mssg[i - (channel[user[id_finder(token)].channel_id].last_message + 1)] = allmsg[i];
-		sprintf(end, "{\"type\": \"List\",\"content\":[%s]}", mssg);
+		sprintf(end, "{\"type\":\"List\",\"content\":[%s]}", mssg);
 		channel[user[id_finder(token)].channel_id].last_message = strlen(allmsg) - 1;
 	}
 	
@@ -452,8 +452,8 @@ void refresh() {	 /************************** Rrefresh *************************
 void channel_members() {	 /************************** Channel Members *****************************/
 
 	char buffer[MAX];
-	if (id_finder(token) == -1)	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
-	else if (user[id_finder(token)].channel_id == -1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
+	if (id_finder(token) == -1)	sprintf(buffer, "{\"type\":\"Error\",\"content\":\"Authentication failed!\"}");
+	else if (user[id_finder(token)].channel_id == -1) sprintf(buffer, "{\"type\":\"Error\",\"content\":\"User is not online right now!\"}");
 	else {
 		
 		ckJSON *add, *content;
@@ -478,7 +478,7 @@ void channel_members() {	 /************************** Channel Members **********
 void leave_channel() {	 /************************** Leave channel *****************************/
 
 	char buffer[MAX];
-	if (id_finder(token) == -1) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	if (id_finder(token) == -1) 	sprintf(buffer, "{\"type\":\"Error\",\"content\":\"Authentication failed!\"}");
 	else if (user[id_finder(token)].channel_id == -1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
 	else {
 		FILE* channelfile;
@@ -531,7 +531,7 @@ void leave_channel() {	 /************************** Leave channel **************
 				channel[user[id_finder(token)].channel_id].user_id[i - 1] = channel[user[id_finder(token)].channel_id].user_id[i];
 			}
 			channel[user[id_finder(token)].channel_id].users--;
-			sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
+			sprintf(buffer, "{\"type\":\"Successful\",\"content\":\"\"}");
 		}
 		// Send the buffer to client
 		send(client_socket, buffer, sizeof(buffer), 0);
@@ -544,9 +544,9 @@ void leave_channel() {	 /************************** Leave channel **************
 void logout() {	 /************************** Logout *****************************/
 
 	char buffer[MAX];
-	if (id_finder(token) == -1)	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	if (id_finder(token) == -1)	sprintf(buffer, "{\"type\":\"Error\",\"content\":\"Authentication failed!\"}");
 	else {
-		sprintf(buffer, "{\"type\": \"Successful\", \"content\": \"\"}");
+		sprintf(buffer, "{\"type\":\"Successful\",\"content\":\"\"}");
 	}
 	// Send the buffer to client
 	send(client_socket, buffer, sizeof(buffer), 0);
@@ -567,16 +567,16 @@ void search_members() {
 
 	int flag=0;
 	char buffer[MAX];
-	if (id_finder(token) == -1) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
+	if (id_finder(token) == -1) 	sprintf(buffer, "{\"type\":\"Error\",\"content\":\"Authentication failed!\"}");
 	else if (user[id_finder(token)].channel_id == -1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
 	else {
 		for (int i = 0; i < channel[user[id_finder(token)].channel_id].users; i++) {
 			if (strcmp(username, user[channel[user[id_finder(token)].channel_id].user_id[i]].username) == 0) { 
-				sprintf(buffer, "{\"type\": \"result\", \"content\": \"true\"}");
+				sprintf(buffer, "{\"type\":\"result\",\"content\":\"true\"}");
 				flag = 1;
 			}
 		}
-		if(!flag)	sprintf(buffer, "{\"type\": \"result\", \"content\": \"false\"}");
+		if(!flag)	sprintf(buffer, "{\"type\":\"result\",\"content\":\"false\"}");
 	}
 
 	// Send the buffer to client
@@ -589,8 +589,8 @@ void search_members() {
 void search_message() {
 
 	char buffer[10000];
-	if (id_finder(token) == -1) 	sprintf(buffer, "{\"type\": \"Error\", \"content\": \"Authentication failed!\"}");
-	else if (user[id_finder(token)].channel_id == -1) sprintf(buffer, "{\"type\": \"Error\", \"content\": \"User is not online right now!\"}");
+	if (id_finder(token) == -1) 	sprintf(buffer, "{\"type\":\"Error\",\"content\":\"Authentication failed!\"}");
+	else if (user[id_finder(token)].channel_id == -1) sprintf(buffer, "{\"type\":\"Error\",\"content\":\"User is not online right now!\"}");
 	else {
 
 		ckJSON *add, *content;
