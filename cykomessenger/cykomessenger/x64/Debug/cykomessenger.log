@@ -1,0 +1,24 @@
+﻿Build started 1/30/2020 11:49:07 PM.
+     1>Project "C:\Users\arash\Desktop\Uniwork\F of P\Project\Phase 1\cykomessenger\cykomessenger\cykomessenger.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         D:\Program Files\Visual Studio\VC\bin\x86_amd64\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Yu"stdafx.h" /Fp"x64\Debug\cykomessenger.pch" /Fo"x64\Debug\\" /Fd"x64\Debug\vc140.pdb" /Gd /TP /errorReport:prompt cykomessenger.cpp
+         cykomessenger.cpp
+     1>c:\users\arash\desktop\uniwork\f of p\project\phase 1\cykomessenger\cykomessenger\cjson.c(98): error C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+         c:\program files (x86)\windows kits\10\include\10.0.10150.0\ucrt\stdio.h(1769): note: see declaration of 'sprintf'
+     1>c:\users\arash\desktop\uniwork\f of p\project\phase 1\cykomessenger\cykomessenger\functions.cpp(49): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+     1>c:\users\arash\desktop\uniwork\f of p\project\phase 1\cykomessenger\cykomessenger\functions.cpp(120): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+     1>c:\users\arash\desktop\uniwork\f of p\project\phase 1\cykomessenger\cykomessenger\functions.cpp(195): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+     1>c:\users\arash\desktop\uniwork\f of p\project\phase 1\cykomessenger\cykomessenger\functions.cpp(271): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+     1>c:\users\arash\desktop\uniwork\f of p\project\phase 1\cykomessenger\cykomessenger\functions.cpp(347): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+     1>c:\users\arash\desktop\uniwork\f of p\project\phase 1\cykomessenger\cykomessenger\functions.cpp(387): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+     1>c:\users\arash\desktop\uniwork\f of p\project\phase 1\cykomessenger\cykomessenger\functions.cpp(433): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+     1>c:\users\arash\desktop\uniwork\f of p\project\phase 1\cykomessenger\cykomessenger\functions.cpp(477): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+     1>c:\users\arash\desktop\uniwork\f of p\project\phase 1\cykomessenger\cykomessenger\functions.cpp(531): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+     1>c:\users\arash\desktop\uniwork\f of p\project\phase 1\cykomessenger\cykomessenger\functions.cpp(582): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+     1>c:\users\arash\desktop\uniwork\f of p\project\phase 1\cykomessenger\cykomessenger\functions.cpp(627): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+     1>c:\users\arash\desktop\uniwork\f of p\project\phase 1\cykomessenger\cykomessenger\functions.cpp(679): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+     1>Done Building Project "C:\Users\arash\Desktop\Uniwork\F of P\Project\Phase 1\cykomessenger\cykomessenger\cykomessenger.vcxproj" (Build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:00.58
