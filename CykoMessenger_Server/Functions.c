@@ -18,7 +18,6 @@
 #define SA struct sockaddr
 
 void recieve();
-void socket_connect();
 void order_finder(char* buffer);
 void create_account();
 void signin();
