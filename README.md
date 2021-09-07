@@ -1,2 +1,2 @@
-# cyko_server
- a really fast and high-performance chat server
+# CykoMessenger Server
+ A really fast and high-performance chat server for CykoMessenger.
